@@ -113,7 +113,7 @@ class StreamThread(threading.Thread):
 
     def publishFramesContinuously(self):
         '''Continuous loop to publish images'''
-        rate = rospy.Rate(10)
+        rate = rospy.Rate(20)
         while(True):
             try:
                 
@@ -172,8 +172,9 @@ class StreamThread(threading.Thread):
         # self.msg.header.frame_id = self.axis.frame_id # UPDATED
         self.msg.format = "jpeg"
         self.msg.data = self.img
+        
         self.axis.pub.publish(self.msg)
-       #  rospy.logwarn("Publish CompressedImage {}".format(self.axis.img_idx))
+        # rospy.loginfo("Publish CompressedImage {}".format(self.axis.img_idx))
 
     def publishCameraInfoMsg(self):
         '''Publish camera info manager message'''
@@ -194,7 +195,7 @@ class StreamThread(threading.Thread):
 
 class Axis:
     def __init__(self, hostname, username, password, width, height, fps, frame_id,
-                 camera_info_url, use_encrypted_password, camera, ir, defog, wiper):
+                 camera_info_url, use_encrypted_password, camera, ir, defog, wiper, images_dir):
         self.hostname = hostname
         self.username = username
         self.password = password
@@ -228,10 +229,12 @@ class Axis:
 
 
         # <-- ADDED -->
-        self.fake_img_stream = [img_path for img_path in glob('/white-cane-app/assets/images/*')
+        
+        self.fake_img_stream = [os.path.join(images_dir, img_path) for img_path in os.listdir(images_dir)
                                 if img_path[-3:] in ["JPG", "jpg", "png", "PNG"]]
         self.img_idx = 0
         self.fake_img_stream = sorted(self.fake_img_stream, key = lambda x: int(os.path.splitext(os.path.basename(x))[0]))
+
         # The Axis Q62 series supports a night-vision mode with an active IR illuminator
         # If this option is enabled, add the necessary services and topics
         if ir:
@@ -432,7 +435,9 @@ def main():
         'camera' : 0,
         'ir': False,
         'defog': False,
-        'wiper': False }
+        'wiper': False,
+         'images_dir': './' }
+    
     args = updateArgs(arg_defaults)
     axis = Axis(**args)
     axis.start_fake_streaming()
