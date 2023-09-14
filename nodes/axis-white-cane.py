@@ -173,7 +173,7 @@ class StreamThread(threading.Thread):
         self.msg.format = "jpeg"
         self.msg.data = self.img
         self.axis.pub.publish(self.msg)
-        rospy.logwarn("Publish CompressedImage {}".format(self.axis.img_idx))
+       #  rospy.logwarn("Publish CompressedImage {}".format(self.axis.img_idx))
 
     def publishCameraInfoMsg(self):
         '''Publish camera info manager message'''
