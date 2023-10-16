@@ -27,6 +27,7 @@ class StreamThread(threading.Thread):
         self.axis = axis
         self.daemon = True
         self.timeoutSeconds = 2.5
+        self.frame_number = 0
 
 
     def waitForHost(self):
@@ -119,7 +120,7 @@ class StreamThread(threading.Thread):
                 
                 # self.findBoundary() # UPDATED
                 # self.getImage()
-                self.get_image_custom() # ADDED
+                self.get_image_custom() # ADDED            
                 self.publishMsg()
                 rate.sleep()
                 # self.publishCameraInfoMsg() # UPDATED
@@ -170,10 +171,12 @@ class StreamThread(threading.Thread):
         self.msg = CompressedImage()
         self.msg.header.stamp = rospy.Time.now()
         # self.msg.header.frame_id = self.axis.frame_id # UPDATED
+        self.msg.header.frame_id = self.frame_number
         self.msg.format = "jpeg"
         self.msg.data = self.img
         
         self.axis.pub.publish(self.msg)
+        self.vis_publish_frame(self.msg)
         # rospy.loginfo("Publish CompressedImage {}".format(self.axis.img_idx))
 
     def publishCameraInfoMsg(self):
@@ -192,6 +195,16 @@ class StreamThread(threading.Thread):
         self.axis.img_idx += 1
         if self.axis.img_idx == len(self.axis.fake_img_stream) -1:
             self.axis.img_idx = 0
+        self.frame_number += 1
+    
+    def vis_publish_frame(self, compressed_image):
+        '''Visualize published image'''
+        np_arr = np.fromstring(compressed_image.data, np.uint8)
+        image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+        cv2.putText(image, f"Frame Number : {compressed_image.header.frame_id:05d}", (5, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+        im_resize = cv2.resize(image, (int(image.shape[1]/2), int(image.shape[0]/2)))
+        cv2.imshow("Published Frame", im_resize)
+        cv2.waitKey(1)
 
 class Axis:
     def __init__(self, hostname, username, password, width, height, fps, frame_id,
@@ -443,6 +456,7 @@ def main():
     axis.start_fake_streaming()
     
     rospy.spin()
+    cv2.destroyAllWindows()
 
 def updateArgs(arg_defaults):
     '''Look up parameters starting in the driver's private parameter space, but
