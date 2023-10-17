@@ -169,9 +169,9 @@ class StreamThread(threading.Thread):
         '''Publish jpeg image as a ROS message'''
         
         self.msg = CompressedImage()
-        self.msg.header.stamp = rospy.Time.now()
+        # self.msg.header.stamp = rospy.Time.now()
         # self.msg.header.frame_id = self.axis.frame_id # UPDATED
-        self.msg.header.frame_id = self.frame_number
+        self.msg.header.frame_id = f"{self.frame_number:05d}"
         self.msg.format = "jpeg"
         self.msg.data = self.img
         
@@ -201,7 +201,7 @@ class StreamThread(threading.Thread):
         '''Visualize published image'''
         np_arr = np.fromstring(compressed_image.data, np.uint8)
         image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
-        cv2.putText(image, f"Frame Number : {compressed_image.header.frame_id:05d}", (5, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+        cv2.putText(image, f"Frame Number : {compressed_image.header.frame_id}", (5, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
         im_resize = cv2.resize(image, (int(image.shape[1]/2), int(image.shape[0]/2)))
         cv2.imshow("Published Frame", im_resize)
         cv2.waitKey(1)
@@ -237,7 +237,7 @@ class Axis:
         #                                           url = self.camera_info_url)  # UPDATED
         # self.cinfo.loadCameraInfo()         # required before getCameraInfo()  # UPDATED
         self.st = None
-        self.pub = rospy.Publisher("image_raw/compressed", CompressedImage, self, queue_size=10)
+        self.pub = rospy.Publisher("image_raw/compressed", CompressedImage, self, queue_size=100)
         # self.caminfo_pub = rospy.Publisher("camera_info", CameraInfo, self, queue_size=1) # UPDATED
 
 
